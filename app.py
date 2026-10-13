@@ -128,8 +128,11 @@ def endlabel(fig, x, y, text, color=dz.FAINT):
                        xshift=8, font=dict(size=12, color=color))
 
 def chart(fig, h):
-    fig.update_layout(height=h)
-    st.plotly_chart(fig, width="stretch",
+    fig.update_layout(height=h, template="ledger",
+                      paper_bgcolor=dz.PAPER, plot_bgcolor=dz.PAPER)
+    fig.update_xaxes(automargin=True)   # make room for tick labels and
+    fig.update_yaxes(automargin=True)   # titles instead of clipping them
+    st.plotly_chart(fig, width="stretch", theme=None,
                     config={"displayModeBar": False})
 
 def spark(vals, color, w=76, h=20):
@@ -229,7 +232,8 @@ with tabD:
             marker_color=[dz.hue(c) for c in s.index],
             text=[f"{v:+,.0f}" for v in s.values], textposition="outside",
             textfont=dict(size=11, color=dz.FAINT), cliponaxis=False))
-        f.update_xaxes(title="tonnes", showgrid=False)
+        f.update_xaxes(title="tonnes", showgrid=False,
+                       range=[s.min() - 30, s.max() * 1.15])
         f.update_yaxes(side="left", gridcolor=dz.PAPER)
         chart(f, 330)
 
@@ -313,12 +317,13 @@ with tabD:
         for col, c in zip(cols, picks):
             d = sel[sel.country == c]
             buy_m = int((d.net_purchases_t > 0).sum())
+            sell_m = int((d.net_purchases_t < 0).sum())
             peak = d.loc[d.net_purchases_t.abs().idxmax()]
             col.metric(f"{c}, {start.strftime('%b %y')}–{end.strftime('%b %y')}",
-                       f"{d.net_purchases_t.sum():+,.0f} t",
-                       f"bought in {buy_m} of {len(d)} months",
-                       delta_color="off")
-            col.caption(f"Largest month: {peak.net_purchases_t:+.1f} t "
+                       f"{d.net_purchases_t.sum():+,.0f} t")
+            col.caption(f"Net buyer in {buy_m} of {len(d)} months, net seller "
+                        f"in {sell_m}. Largest month: "
+                        f"{peak.net_purchases_t:+.1f} t "
                         f"({peak.date.strftime('%b %Y')})")
 
 # ============================================================== INFERRED =====
